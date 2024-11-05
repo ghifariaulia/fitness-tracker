@@ -16,14 +16,28 @@ class MuscleIntensity {
   final String name;
   final double intensity;
   final double totalVolume;
-  final Color color;
+  final Color baseColor;
 
   const MuscleIntensity({
     required this.name,
     required this.intensity,
     required this.totalVolume,
-    required this.color,
+    required this.baseColor,
   });
+
+  Color get color => Color.lerp(baseColor, Colors.pink, intensity / 200)!;
+
+  MuscleIntensity copyWith({
+    double? intensity,
+    double? totalVolume,
+  }) {
+    return MuscleIntensity(
+      name: this.name,
+      intensity: intensity ?? this.intensity,
+      totalVolume: totalVolume ?? this.totalVolume,
+      baseColor: this.baseColor,
+    );
+  }
 }
 
 final Map<String, MuscleGroup> muscleGroups = {
@@ -36,7 +50,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Incline Bench Press',
       'Decline Bench Press',
     ],
-    color: Colors.red[300]!,
+    color: Colors.grey[300]!,
   ),
   'back': MuscleGroup(
     name: 'Back',
@@ -47,7 +61,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Deadlifts',
       'Face Pulls',
     ],
-    color: Colors.blue[300]!,
+    color: Colors.grey[300]!,
   ),
   'legs': MuscleGroup(
     name: 'Legs',
@@ -58,7 +72,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Calf Raises',
       'Romanian Deadlifts',
     ],
-    color: Colors.green[300]!,
+    color: Colors.grey[300]!,
   ),
   'shoulders': MuscleGroup(
     name: 'Shoulders',
@@ -69,7 +83,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Reverse Flyes',
       'Shrugs',
     ],
-    color: Colors.purple[300]!,
+    color: Colors.grey[300]!,
   ),
   'arms': MuscleGroup(
     name: 'Arms',
@@ -80,7 +94,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Skull Crushers',
       'Chin-ups',
     ],
-    color: Colors.orange[300]!,
+    color: Colors.grey[300]!,
   ),
   'core': MuscleGroup(
     name: 'Core',
@@ -91,6 +105,6 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Leg Raises',
       'Ab Wheel Rollouts',
     ],
-    color: Colors.yellow[300]!,
+    color: Colors.grey[300]!,
   ),
 };
