@@ -26,4 +26,38 @@ class Workout {
     required this.volumeLoad,
     required this.timestamp,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'muscleGroup': muscleGroup,
+      'exercise': exercise,
+      'sets': sets,
+      'reps': reps,
+      'weight': weight,
+      'isBodyweight': isBodyweight ? 1 : 0,
+      'additionalWeight': additionalWeight,
+      'restTime': restTime,
+      'intensity': intensity,
+      'volumeLoad': volumeLoad,
+      'timestamp': timestamp,
+    };
+  }
+
+  factory Workout.fromMap(Map<String, dynamic> map) {
+    return Workout(
+      id: map['id'],
+      muscleGroup: map['muscleGroup'],
+      exercise: map['exercise'],
+      sets: map['sets'],
+      reps: map['reps'],
+      weight: map['weight'],
+      isBodyweight: map['isBodyweight'] == 1,
+      additionalWeight: map['additionalWeight'],
+      restTime: map['restTime'],
+      intensity: map['intensity'],
+      volumeLoad: map['volumeLoad'],
+      timestamp: map['timestamp'],
+    );
+  }
 }
