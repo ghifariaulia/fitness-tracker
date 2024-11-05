@@ -1,7 +1,21 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
 
 void main() {
+  if (!kIsWeb) {
+    try {
+      // Initialize FFI for desktop platforms only
+      if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        sqfliteFfiInit();
+        databaseFactory = databaseFactoryFfi;
+      }
+    } catch (e) {
+      print("Platform check not applicable on the web.");
+    }
+  }
   runApp(const WorkoutTrackerApp());
 }
 
