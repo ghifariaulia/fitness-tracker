@@ -4,11 +4,13 @@ import 'package:intl/intl.dart';
 
 class WorkoutList extends StatelessWidget {
   final List<Workout> workouts;
+  final double? userBodyweight; // Add this line to accept user's bodyweight
   final Function(String) onDelete;
 
   const WorkoutList({
     super.key,
     required this.workouts,
+    required this.userBodyweight, // Include user's bodyweight in constructor
     required this.onDelete,
   });
 
@@ -47,6 +49,11 @@ class WorkoutList extends StatelessWidget {
                     .map((w) => w.volumeLoad)
                     .reduce((a, b) => a + b);
 
+                // Get the time of the first workout in the session for the display
+                final sessionStartTime = DateFormat('hh:mm a').format(
+                  DateTime.parse(sessionWorkouts.first.timestamp),
+                );
+
                 return Card(
                   margin: const EdgeInsets.symmetric(
                     horizontal: 8.0,
@@ -61,14 +68,14 @@ class WorkoutList extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             Text(
-                              'Session ${sessionIndex + 1}',
+                              'Session ${sessionIndex + 1} at $sessionStartTime',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
                             Text(
-                              'Total Volume: ${(totalVolumeLoad / 1000).toStringAsFixed(1)}k kg',
+                              'Total Volume: $totalVolumeLoad kg',
                               style: const TextStyle(
                                 fontSize: 14,
                                 color: Colors.grey,
@@ -100,7 +107,7 @@ class WorkoutList extends StatelessWidget {
                                 Text('${workout.sets} sets × ${workout.reps} reps'),
                                 Text(
                                   workout.isBodyweight
-                                      ? 'Bodyweight + ${workout.additionalWeight}kg'
+                                      ? 'Total Weight: ${userBodyweight! + workout.additionalWeight}kg'
                                       : '${workout.weight}kg',
                                 ),
                               ],
