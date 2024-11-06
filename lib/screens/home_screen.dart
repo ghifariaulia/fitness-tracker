@@ -1,5 +1,7 @@
+import 'package:fitness_tracker/screens/user_profile.dart';
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../models/user.dart';
 import '../services/database_helper.dart';
 import '../services/user_preferences.dart';
 import '../widgets/user_form.dart';
@@ -19,6 +21,7 @@ class HomeScreen extends StatefulWidget {
 class HomeScreenState extends State<HomeScreen> {
   final DatabaseHelper _dbHelper = DatabaseHelper();
   bool showUserForm = true;
+  User? user;
   double? bodyweight;
   double? height;
   int? age;
@@ -58,7 +61,19 @@ class HomeScreenState extends State<HomeScreen> {
       bodyweight = userData['weight'];
       height = userData['height'];
       age = userData['age'];
-      showUserForm = bodyweight == null || height == null || age == null;
+
+      // Initialize user object with null-safe values
+      if (bodyweight != null && height != null && age != null) {
+        user = User(
+          bodyweight: bodyweight!,
+          height: height!,
+          age: age!,
+        );
+        showUserForm = false;
+      } else {
+        user = null;
+        showUserForm = true;
+      }
     });
   }
 
@@ -97,7 +112,16 @@ class HomeScreenState extends State<HomeScreen> {
       bodyweight = weight;
       this.height = height;
       this.age = age;
-      showUserForm = false;
+
+      // Create new user object when form is submitted
+      if (weight != null && height != null && age != null) {
+        user = User(
+          bodyweight: weight,
+          height: height,
+          age: age,
+        );
+        showUserForm = false;
+      }
     });
   }
 
@@ -110,14 +134,18 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   void deleteWorkout(String id) async {
-    await _dbHelper.deleteWorkout(id);
-    setState(() {
-      workouts.removeWhere((w) => w.id == id);
-      _updateMuscleIntensity();
-    });
+    final workout = workouts.firstWhere((w) => w.id == id);
+    if (workout != null) {
+      await _dbHelper.deleteWorkout(id);
+      setState(() {
+        workouts.remove(workout);
+        _decreaseMuscleIntensity(workout);
+      });
+    }
   }
 
   void _updateMuscleIntensity() {
+    _initializeMuscleIntensity();
     for (var workout in workouts) {
       _updateMuscleIntensityForWorkout(workout);
     }
@@ -145,6 +173,39 @@ class HomeScreenState extends State<HomeScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Workout Tracker'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.person),
+            onPressed: () {
+              // Only navigate to profile if user exists
+              if (user != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UserProfilePage(
+                      user: user!,
+                      onUpdate: (updatedUser) {
+                        setState(() {
+                          user = updatedUser;
+                          bodyweight = updatedUser.bodyweight;
+                          height = updatedUser.height;
+                          age = updatedUser.age;
+                        });
+                      },
+                    ),
+                  ),
+                );
+              } else {
+                // Show a message if user profile is not yet created
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Please complete your profile information first'),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16.0),
@@ -156,6 +217,23 @@ class HomeScreenState extends State<HomeScreen> {
               initialHeight: height,
               initialAge: age,
             ),
+          if (!showUserForm && user != null) ...[
+            // Show user info summary
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Weight: ${user!.bodyweight} kg'),
+                    Text('Height: ${user!.height} cm'),
+                    Text('Age: ${user!.age} years'),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+          ],
           if (muscleIntensity.isNotEmpty)
             MuscleStats(muscleIntensity: muscleIntensity),
           WorkoutForm(
