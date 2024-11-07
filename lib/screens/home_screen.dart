@@ -1,5 +1,6 @@
-import 'package:fitness_tracker/screens/user_profile.dart';
+import 'package:fitness_tracker/screens/exercise_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:fitness_tracker/screens/user_profile.dart';
 import 'dart:async';
 import '../models/user.dart';
 import '../services/database_helper.dart';
@@ -12,7 +13,9 @@ import '../models/workout.dart';
 import '../models/muscle_data.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final VoidCallback onToggleTheme;
+
+  const HomeScreen({super.key, required this.onToggleTheme});
 
   @override
   HomeScreenState createState() => HomeScreenState();
@@ -28,6 +31,7 @@ class HomeScreenState extends State<HomeScreen> {
   List<Workout> workouts = [];
   Map<String, MuscleIntensity> muscleIntensity = {};
   Timer? _timer;
+  int _selectedIndex = 0;
 
   @override
   void initState() {
@@ -62,7 +66,6 @@ class HomeScreenState extends State<HomeScreen> {
       height = userData['height'];
       age = userData['age'];
 
-      // Initialize user object with null-safe values
       if (bodyweight != null && height != null && age != null) {
         user = User(
           bodyweight: bodyweight!,
@@ -113,7 +116,6 @@ class HomeScreenState extends State<HomeScreen> {
       this.height = height;
       this.age = age;
 
-      // Create new user object when form is submitted
       if (weight != null && height != null && age != null) {
         user = User(
           bodyweight: weight,
@@ -161,94 +163,164 @@ class HomeScreenState extends State<HomeScreen> {
 
   void _decreaseMuscleIntensity(Workout workout) {
     final intensity = muscleIntensity[workout.muscleGroup]!;
-    // Decrease intensity by the workout's intensity for workouts older than a week
     muscleIntensity[workout.muscleGroup] = intensity.copyWith(
       intensity: intensity.intensity - workout.intensity,
       totalVolume: intensity.totalVolume - workout.volumeLoad,
     );
   }
 
+  void _onItemTapped(int index) {
+    if (index == 2 && user == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please complete your profile information first'),
+        ),
+      );
+    } else {
+      setState(() {
+        _selectedIndex = index;
+      });
+    }
+  }
+
+  Widget _getSelectedScreen() {
+    switch (_selectedIndex) {
+      case 0:
+        return _buildHomeContent();
+      case 1:
+        return _buildStatsContent();
+      case 2:
+        return _buildProfileContent();
+      default:
+        return _buildHomeContent();
+    }
+  }
+
+  Widget _buildHomeContent() {
+    return ListView(
+      padding: const EdgeInsets.all(16.0),
+      children: [
+        if (showUserForm)
+          UserForm(
+            onSubmit: updateUserInfo,
+            initialWeight: bodyweight,
+            initialHeight: height,
+            initialAge: age,
+          ),
+        if (!showUserForm && user != null) ...[
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Weight: ${user!.bodyweight} kg'),
+                  Text('Height: ${user!.height} cm'),
+                  Text('Age: ${user!.age} years'),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (muscleIntensity.isNotEmpty)
+          MuscleStats(muscleIntensity: muscleIntensity),
+        WorkoutForm(
+          onSubmit: addWorkout,
+          bodyweight: bodyweight,
+        ),
+        if (workouts.isNotEmpty)
+          WorkoutList(
+            workouts: workouts,
+            onDelete: deleteWorkout,
+            userBodyweight: bodyweight,
+          ),
+        if (muscleIntensity.isEmpty && workouts.isEmpty)
+          const Center(child: Text("No data available. Please add workouts.")),
+      ],
+    );
+  }
+
+  Widget _buildStatsContent() {
+    return ExerciseProgressionScreen(workouts: workouts);
+  }
+
+  Widget _buildProfileContent() {
+    if (user == null) {
+      return const Center(
+        child: Text('Please complete your profile information first'),
+      );
+    } else {
+      return UserProfilePage(
+        user: user!,
+        onUpdate: (updatedUser) {
+          setState(() {
+            user = updatedUser;
+            bodyweight = updatedUser.bodyweight;
+            height = updatedUser.height;
+            age = updatedUser.age;
+          });
+        },
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: _selectedIndex == 0
+          ? AppBar(
         title: const Text('Workout Tracker'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.person),
-            onPressed: () {
-              // Only navigate to profile if user exists
-              if (user != null) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => UserProfilePage(
-                      user: user!,
-                      onUpdate: (updatedUser) {
-                        setState(() {
-                          user = updatedUser;
-                          bodyweight = updatedUser.bodyweight;
-                          height = updatedUser.height;
-                          age = updatedUser.age;
-                        });
-                      },
-                    ),
-                  ),
-                );
-              } else {
-                // Show a message if user profile is not yet created
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please complete your profile information first'),
-                  ),
-                );
-              }
-            },
+            icon: const Icon(Icons.brightness_6),
+            onPressed: widget.onToggleTheme,
           ),
         ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          if (showUserForm)
-            UserForm(
-              onSubmit: updateUserInfo,
-              initialWeight: bodyweight,
-              initialHeight: height,
-              initialAge: age,
+      )
+          : null,
+      body: _getSelectedScreen(),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).bottomNavigationBarTheme.backgroundColor,
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 10,
+              spreadRadius: 0.5,
             ),
-          if (!showUserForm && user != null) ...[
-            // Show user info summary
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Weight: ${user!.bodyweight} kg'),
-                    Text('Height: ${user!.height} cm'),
-                    Text('Age: ${user!.age} years'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
           ],
-          if (muscleIntensity.isNotEmpty)
-            MuscleStats(muscleIntensity: muscleIntensity),
-          WorkoutForm(
-            onSubmit: addWorkout,
-            bodyweight: bodyweight,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
           ),
-          if (workouts.isNotEmpty)
-            WorkoutList(
-              workouts: workouts,
-              onDelete: deleteWorkout, userBodyweight: bodyweight,
-            ),
-          if (muscleIntensity.isEmpty && workouts.isEmpty)
-            const Center(
-                child: Text("No data available. Please add workouts.")),
-        ],
+        ),
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+          child: BottomNavigationBar(
+            items: const <BottomNavigationBarItem>[
+              BottomNavigationBarItem(
+                icon: Icon(Icons.home),
+                label: 'Home',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.bar_chart),
+                label: 'Stats',
+              ),
+              BottomNavigationBarItem(
+                icon: Icon(Icons.person),
+                label: 'Profile',
+              ),
+            ],
+            currentIndex: _selectedIndex,
+            selectedItemColor: Theme.of(context).bottomNavigationBarTheme.selectedItemColor,
+            unselectedItemColor: Theme.of(context).bottomNavigationBarTheme.unselectedItemColor,
+            onTap: _onItemTapped,
+          ),
+        ),
       ),
     );
   }
