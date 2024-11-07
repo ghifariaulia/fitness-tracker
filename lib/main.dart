@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
+import 'services/themes.dart';
 
 void main() {
   if (!kIsWeb) {
@@ -20,21 +21,29 @@ void main() {
   runApp(const WorkoutTrackerApp());
 }
 
-class WorkoutTrackerApp extends StatelessWidget {
+class WorkoutTrackerApp extends StatefulWidget {
   const WorkoutTrackerApp({super.key});
+
+  @override
+  WorkoutTrackerAppState createState() => WorkoutTrackerAppState();
+}
+
+class WorkoutTrackerAppState extends State<WorkoutTrackerApp> {
+
+  bool _isDarkMode = false;
+
+  void _toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Workout Tracker',
-      theme: ThemeData(
-        textTheme: GoogleFonts.poppinsTextTheme(
-          Theme.of(context).textTheme,
-        ),
-        primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
-      ),
-      home: const HomeScreen(),
+      theme: _isDarkMode ? darkTheme : lightTheme,
+      home: HomeScreen(onToggleTheme: _toggleTheme),
     );
   }
 }
