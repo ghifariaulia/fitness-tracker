@@ -1,12 +1,11 @@
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'screens/home_screen.dart';
 import 'services/themes.dart';
 
-void main() {
+main() async {
   if (!kIsWeb) {
     try {
       // Initialize FFI for desktop platforms only
@@ -18,24 +17,38 @@ void main() {
       print("Platform check not applicable on the web.");
     }
   }
-  runApp(const WorkoutTrackerApp());
+  WidgetsFlutterBinding.ensureInitialized();
+  final themeManager = ThemeManager();
+  final isDarkMode = await themeManager.loadThemePreference();
+  runApp(WorkoutTrackerApp(isDarkMode: isDarkMode, themeManager: themeManager));
 }
 
 class WorkoutTrackerApp extends StatefulWidget {
-  const WorkoutTrackerApp({super.key});
+  final bool isDarkMode;
+  final ThemeManager themeManager;
+
+  const WorkoutTrackerApp(
+      {super.key, required this.isDarkMode, required this.themeManager});
 
   @override
   WorkoutTrackerAppState createState() => WorkoutTrackerAppState();
 }
 
 class WorkoutTrackerAppState extends State<WorkoutTrackerApp> {
+  late bool _isDarkMode;
 
-  bool _isDarkMode = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _isDarkMode = widget.isDarkMode;
+  }
 
   void _toggleTheme() {
     setState(() {
       _isDarkMode = !_isDarkMode;
     });
+    widget.themeManager.saveThemePreference(_isDarkMode);
   }
 
   @override
