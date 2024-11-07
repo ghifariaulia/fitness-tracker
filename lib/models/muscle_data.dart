@@ -49,6 +49,7 @@ final Map<String, MuscleGroup> muscleGroups = {
       'Dumbbell Flyes',
       'Incline Bench Press',
       'Decline Bench Press',
+      'Dips'
     ],
     color: Colors.grey[300]!,
   ),
