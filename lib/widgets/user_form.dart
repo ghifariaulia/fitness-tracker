@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 class UserForm extends StatefulWidget {
-  final Function(double?, double?, int?) onSubmit;
+  final Function(double?, double?, int?, String?) onSubmit;
   final double? initialWeight;
   final double? initialHeight;
   final int? initialAge;
+  final String? initialGender;
 
   const UserForm({
     super.key,
@@ -12,6 +13,7 @@ class UserForm extends StatefulWidget {
     this.initialWeight,
     this.initialHeight,
     this.initialAge,
+    this.initialGender,
   });
 
   @override
@@ -22,6 +24,7 @@ class UserFormState extends State<UserForm> {
   final _weightController = TextEditingController();
   final _heightController = TextEditingController();
   final _ageController = TextEditingController();
+  String _selectedGender = 'Male'; // Default gender value
 
   @override
   void initState() {
@@ -29,6 +32,7 @@ class UserFormState extends State<UserForm> {
     _weightController.text = widget.initialWeight?.toString() ?? '';
     _heightController.text = widget.initialHeight?.toString() ?? '';
     _ageController.text = widget.initialAge?.toString() ?? '';
+    _selectedGender = widget.initialGender ?? 'Male'; // Initialize with user's gender
   }
 
   double? calculateBMI() {
@@ -77,6 +81,22 @@ class UserFormState extends State<UserForm> {
                 border: OutlineInputBorder(),
               ),
             ),
+            const SizedBox(height: 8),
+            const Text('Gender:', style: TextStyle(fontSize: 16)),
+            DropdownButton<String>(
+              value: _selectedGender,
+              items: <String>['Male', 'Female'].map((String value) {
+                return DropdownMenuItem<String>(
+                  value: value,
+                  child: Text(value),
+                );
+              }).toList(),
+              onChanged: (String? newValue) {
+                setState(() {
+                  _selectedGender = newValue!;
+                });
+              },
+            ),
             const SizedBox(height: 16),
             ElevatedButton(
               onPressed: () {
@@ -84,6 +104,7 @@ class UserFormState extends State<UserForm> {
                   double.tryParse(_weightController.text),
                   double.tryParse(_heightController.text),
                   int.tryParse(_ageController.text),
+                  _selectedGender,
                 );
               },
               child: const Text('Save'),
