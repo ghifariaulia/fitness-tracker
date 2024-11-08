@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/user.dart';
-import '../services/user_preferences.dart';
+import '../widgets/user_form.dart';
 
 class UserProfilePage extends StatefulWidget {
   final User user;
@@ -17,88 +17,71 @@ class UserProfilePage extends StatefulWidget {
 }
 
 class _UserProfilePageState extends State<UserProfilePage> {
-  late TextEditingController _bodyweightController;
-  late TextEditingController _heightController;
-  late TextEditingController _ageController;
+  bool _isEditMode = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _bodyweightController = TextEditingController(
-      text: widget.user.bodyweight.toString(),
-    );
-    _heightController = TextEditingController(
-      text: widget.user.height.toString(),
-    );
-    _ageController = TextEditingController(
-      text: widget.user.age.toString(),
-    );
+  void _toggleEditMode() {
+    setState(() {
+      _isEditMode = !_isEditMode;
+    });
   }
 
-  @override
-  void dispose() {
-    _bodyweightController.dispose();
-    _heightController.dispose();
-    _ageController.dispose();
-    super.dispose();
-  }
-
-  void _updateUser() {
-    final updatedUser = User(
-      bodyweight: double.tryParse(_bodyweightController.text) ?? widget.user.bodyweight,
-      height: double.tryParse(_heightController.text) ?? widget.user.height,
-      age: int.tryParse(_ageController.text) ?? widget.user.age,
-    );
-
-    widget.onUpdate(updatedUser);
-    UserPreferences.saveUserData(
-      weight: updatedUser.bodyweight,
-      height: updatedUser.height,
-      age: updatedUser.age,
-    );
-
-    Navigator.pop(context); // Close the profile page
+  double? _calculateBMI(double weight, double height) {
+    if (weight <= 0 || height <= 0) return null;
+    return weight / ((height / 100) * (height / 100));
   }
 
   @override
   Widget build(BuildContext context) {
+    final bmi = _calculateBMI(widget.user.bodyweight, widget.user.height);
     return Scaffold(
       appBar: AppBar(
         title: const Text('User Profile'),
+        actions: [
+          IconButton(
+            icon: Icon(_isEditMode ? Icons.check : Icons.edit),
+            onPressed: _toggleEditMode,
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Bodyweight (kg):', style: TextStyle(fontSize: 16)),
-            TextField(
-              controller: _bodyweightController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(hintText: 'Enter your bodyweight'),
-            ),
-            const SizedBox(height: 16),
-            const Text('Height (cm):', style: TextStyle(fontSize: 16)),
-            TextField(
-              controller: _heightController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(hintText: 'Enter your height'),
-            ),
-            const SizedBox(height: 16),
-            const Text('Age:', style: TextStyle(fontSize: 16)),
-            TextField(
-              controller: _ageController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(hintText: 'Enter your age'),
-            ),
-            const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _updateUser,
-              child: const Text('Save'),
-            ),
-          ],
-        ),
+        child: _isEditMode
+            ? UserForm(
+          onSubmit: (double? weight, double? height, int? age, String? gender) {
+            final updatedUser = User(
+              bodyweight: weight ?? widget.user.bodyweight,
+              height: height ?? widget.user.height,
+              age: age ?? widget.user.age,
+              gender: gender ?? widget.user.gender,
+            );
+            widget.onUpdate(updatedUser);
+            _toggleEditMode();
+          },
+          initialWeight: widget.user.bodyweight,
+          initialHeight: widget.user.height,
+          initialAge: widget.user.age,
+          initialGender: widget.user.gender,
+        )
+            : _buildPreviewMode(bmi),
       ),
+    );
+  }
+
+  Widget _buildPreviewMode(double? bmi) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Weight: ${widget.user.bodyweight} kg', style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 16),
+        Text('Height: ${widget.user.height} cm', style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 16),
+        Text('Age: ${widget.user.age}', style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 16),
+        Text('Gender: ${widget.user.gender}', style: const TextStyle(fontSize: 16)),
+        const SizedBox(height: 16),
+        if (bmi != null)
+          Text('BMI: ${bmi.toStringAsFixed(1)}', style: const TextStyle(fontSize: 16)),
+      ],
     );
   }
 }
