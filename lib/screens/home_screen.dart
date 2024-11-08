@@ -1,6 +1,4 @@
-import 'package:fitness_tracker/screens/exercise_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:fitness_tracker/screens/user_profile.dart';
 import 'dart:async';
 import '../models/user.dart';
 import '../services/database_helper.dart';
@@ -11,6 +9,8 @@ import '../widgets/workout_form.dart';
 import '../widgets/workout_list.dart';
 import '../models/workout.dart';
 import '../models/muscle_data.dart';
+import '../screens/exercise_screen.dart';
+import '../screens/user_profile.dart';
 
 class HomeScreen extends StatefulWidget {
   final VoidCallback onToggleTheme;
@@ -28,6 +28,7 @@ class HomeScreenState extends State<HomeScreen> {
   double? bodyweight;
   double? height;
   int? age;
+  String? gender;
   List<Workout> workouts = [];
   Map<String, MuscleIntensity> muscleIntensity = {};
   Timer? _timer;
@@ -65,12 +66,14 @@ class HomeScreenState extends State<HomeScreen> {
       bodyweight = userData['weight'];
       height = userData['height'];
       age = userData['age'];
+      gender = userData['gender'];
 
-      if (bodyweight != null && height != null && age != null) {
+      if (bodyweight != null && height != null && age != null && gender != null) {
         user = User(
           bodyweight: bodyweight!,
           height: height!,
           age: age!,
+          gender: gender!,
         );
         showUserForm = false;
       } else {
@@ -105,22 +108,25 @@ class HomeScreenState extends State<HomeScreen> {
     setState(() {});
   }
 
-  void updateUserInfo(double? weight, double? height, int? age) async {
+  void updateUserInfo(double? weight, double? height, int? age, String? gender) async {
     await UserPreferences.saveUserData(
       weight: weight,
       height: height,
       age: age,
+      gender: gender,
     );
     setState(() {
       bodyweight = weight;
       this.height = height;
       this.age = age;
+      this.gender = gender;
 
-      if (weight != null && height != null && age != null) {
+      if (weight != null && height != null && age != null && gender != null) {
         user = User(
           bodyweight: weight,
           height: height,
           age: age,
+          gender: gender,
         );
         showUserForm = false;
       }
@@ -183,6 +189,11 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  double? _calculateBMI(double weight, double height) {
+    if (weight <= 0 || height <= 0) return null;
+    return weight / ((height / 100) * (height / 100));
+  }
+
   Widget _getSelectedScreen() {
     switch (_selectedIndex) {
       case 0:
@@ -197,6 +208,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
+    final bmi = user != null ? _calculateBMI(user!.bodyweight, user!.height) : null;
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
@@ -206,6 +218,7 @@ class HomeScreenState extends State<HomeScreen> {
             initialWeight: bodyweight,
             initialHeight: height,
             initialAge: age,
+            initialGender: gender,
           ),
         if (!showUserForm && user != null) ...[
           Card(
@@ -217,6 +230,9 @@ class HomeScreenState extends State<HomeScreen> {
                   Text('Weight: ${user!.bodyweight} kg'),
                   Text('Height: ${user!.height} cm'),
                   Text('Age: ${user!.age} years'),
+                  Text('Gender: ${user!.gender}'),
+                  if (bmi != null)
+                    Text('BMI: ${bmi.toStringAsFixed(1)}'),
                 ],
               ),
             ),
@@ -259,6 +275,7 @@ class HomeScreenState extends State<HomeScreen> {
             bodyweight = updatedUser.bodyweight;
             height = updatedUser.height;
             age = updatedUser.age;
+            gender = updatedUser.gender;
           });
         },
       );
