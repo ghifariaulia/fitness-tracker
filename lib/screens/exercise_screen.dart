@@ -23,28 +23,32 @@ class ExerciseProgressionScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text('Exercise'),
       ),
-      body: ListView.builder(
-        itemCount: groupedWorkouts.keys.length,
-        itemBuilder: (context, index) {
-          String exercise = groupedWorkouts.keys.elementAt(index);
-          List<Workout> exerciseWorkouts = groupedWorkouts[exercise]!;
+      body: workouts.isEmpty
+          ? const Center(
+              child: Text('Add a workout first'),
+            )
+          : ListView.builder(
+              itemCount: groupedWorkouts.keys.length,
+              itemBuilder: (context, index) {
+                String exercise = groupedWorkouts.keys.elementAt(index);
+                List<Workout> exerciseWorkouts = groupedWorkouts[exercise]!;
 
-          return ListTile(
-            title: Text(exercise),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ExerciseDetailScreen(
-                    exercise: exercise,
-                    workouts: exerciseWorkouts,
-                  ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                return ListTile(
+                  title: Text(exercise),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => ExerciseDetailScreen(
+                          exercise: exercise,
+                          workouts: exerciseWorkouts,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
     );
   }
 }
