@@ -189,11 +189,6 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  double? _calculateBMI(double weight, double height) {
-    if (weight <= 0 || height <= 0) return null;
-    return weight / ((height / 100) * (height / 100));
-  }
-
   Widget _getSelectedScreen() {
     switch (_selectedIndex) {
       case 0:
@@ -208,7 +203,6 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeContent() {
-    final bmi = user != null ? _calculateBMI(user!.bodyweight, user!.height) : null;
     return ListView(
       padding: const EdgeInsets.all(16.0),
       children: [
@@ -220,25 +214,6 @@ class HomeScreenState extends State<HomeScreen> {
             initialAge: age,
             initialGender: gender,
           ),
-        if (!showUserForm && user != null) ...[
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Weight: ${user!.bodyweight} kg'),
-                  Text('Height: ${user!.height} cm'),
-                  Text('Age: ${user!.age} years'),
-                  Text('Gender: ${user!.gender}'),
-                  if (bmi != null)
-                    Text('BMI: ${bmi.toStringAsFixed(1)}'),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-        ],
         if (muscleIntensity.isNotEmpty)
           MuscleStats(muscleIntensity: muscleIntensity),
         WorkoutForm(
